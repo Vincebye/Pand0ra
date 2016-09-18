@@ -5,8 +5,8 @@ import shutil
 import os
 import Queue
 from bs4 import BeautifulSoup
-import copy
-same_url="www.(vincebye)"#定义同源url规则
+import datetime
+
 queone=Queue.Queue(maxsize=0)   #unlimited length
 quetwo=Queue.Queue(maxsize=0)   #echecked
 
@@ -36,7 +36,7 @@ def spider_web(url,queueue):
     
 	for url_link in url_data_link:
 		queue_temp=url_link.get('href')
-		if check_url(queue_temp):
+		if check_source_url(queue_temp):
 		    queueue.put(queue_temp) 
 
 	
@@ -44,16 +44,17 @@ def spider_web(url,queueue):
         
 	for url_a in url_data_a:
 		queue_temp=url_a.get('href')
-		if check_url(queue_temp):
-		    queueue.put(queue_temp)     
+		if check_source_url(queue_temp):
+		    queueue.put(queue_temp)
+	check_repeat_url(queueue)
 
-    # 经检查之后的url放进队列二
+	# 经检查之后的url放进队列二
     
 	# for url_num in range(0,queone.qsize()):   
 	# 	queue_temp=queone.get()
 	# 	quetwo.put(queue_temp)
 	
-#将队列一的值传给队列二	
+	#queone->quetwo	
 def swap_queue(queone,quetwo):
 	while(queone.qsize()):
 		quetwo.put(queone.get())
@@ -65,10 +66,49 @@ def analyse_web():
 		spider_web(url_num)
 	pass
 
+# 检查url是否属于同源域名        
+def check_source_url(url):
+	if(url!=None):
+		url_temp=url.split('.',2)
+		print url_temp[1]
+		if(url_temp[1]==url_aim[1]):
+			return 1
+		else:
+			return 0
+
+		#m=re.match(r'www.(.*?), url)
+
+def check_repeat_url(quesource):
+	url_list=[]
+	time=0
+	while(quesource.qsize()):
+		queue_temp=quesource.get()
+		if queue_temp not in url_list:
+		    url_list.append(queue_temp)
+	while len(url_list):
+		for i in range(0,len(url_list)):
+			quesource.put(url_list[i])
+			time=time+1
+			if time==len(url_list):
+				return 
+			
+
+
+
+
+
 def main():
-    spider_web('http://www.vincebye.top',queone)
-    run_time=int(raw_input(r'pleasw input'))
-    while(run_time):
+    starttime=datetime.datetime.now()
+    urladdress=raw_input(r'次元の圣光（ex:www.exaple.com）>>')
+    global url_aim
+    url_aim=urladdress.split('.',2)
+
+    global same_url
+    same_url='www.('+url_aim[1]+')'#定义同源url规则
+    print same_url
+    spider_web('http://'+urladdress+'/',queone)
+    run_time=int(raw_input(r'次元の沙漏>>'))
+    while(run_time-1):
         while(queone.qsize()):
         	try:
         		spider_web(queone.get(), quetwo)
@@ -82,13 +122,14 @@ def main():
 
     # while(queone.qsize()):
     # 	print queone.get()
+    endtime=datetime.datetime.now()
+    print '时间の轨迹>>'+str((endtime-starttime).seconds)+'s'
     print quetwo.qsize()
     print queone.qsize()
-    # 检查url是否属于同源域名
-        
-def check_url(url):
-	if(url!=None):
-		return re.search(same_url, url)
+    while(queone.qsize()):
+    	print queone.get()
+
+
 
 
 
