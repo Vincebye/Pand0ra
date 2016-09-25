@@ -4,7 +4,8 @@ import re
 from bs4 import BeautifulSoup
 import requests
 import Queue
-import sys  
+import sys
+import copy
 reload(sys)  
 sys.setdefaultencoding('utf8')  
 
@@ -99,6 +100,7 @@ class urlfilter(object):
 		#爬取url中所有url 返回一个列表
 	def getlinksforlist(self,url):
 		url_data=[]
+		url_data_temp=[]
 		try:
 			html=requests.get(str(url),headers=req_header).text
 		except Exception, e:
@@ -111,39 +113,39 @@ class urlfilter(object):
 		url_data_a.extend(url_data_link)
 		for i in url_data_a:
 			url_data.append(i.get('href'))
+		for i in url_data:
+			if self.if_relative_path(i):
+				i=urlparse.urlparse(url).scheme+'://'+urlparse.urlparse(url).netloc+i
+				url_data_temp.append(i)
+			else:
+				url_data_temp.append(i)
+		url_data=copy.deepcopy(url_data_temp)
 		url_data=self.clearurl(url_data)
-		#self.showurl(url_data)
 		return url_data
 
 	def showurl(self,list_temp):
 		for i in list_temp:
 			print i
 
-		#爬取url中所有的url 返回一个队列
-	def getlinksforqueue(self,url):
-		url_data=[]
-		try:
-			html=requests.get(str(url),headers=req_header).text
-		except Exception,e:
-			print 'error'
-			return
-		soup=BeautifulSoup(html,"lxml")
-		url_data_link=soup.find_all('link')#define link url
-		url_data_a=soup.find_all('a')#define a url
-		url_data_a.extend(url_data_link)
-		for i in url_data_a:
-			url_data.append(i.get('href'))
-		url_data=self.clearurl(url_data)
-		for i in url_data:
-			queueone.put(i)
-
-		return queueone
-
 	def getalllinksforlist(self,list_temp):
 		list_temp_cache=[]
 		for i in list_temp:
 			list_temp_cache.extend(self.getlinksforlist(i))
 		return list_temp_cache
+
+	def if_relative_path(self,url):
+		try:
+			if re.match('^/.+?', url):
+				return 1
+			else:
+				return 0
+		except Exception, e:
+			return 0
+		# if re.match('^/.*?', url):
+		# 	return 1
+		# else:
+		# 	return 0
+
 
 
 
